@@ -12,7 +12,7 @@ engine = create_async_engine(
     str(settings.database_url),
     pool_size=settings.database_pool_size,
     echo=settings.debug,
-
+    connect_args={"ssl": False}
 )
 
 async_session_maker = async_sessionmaker(

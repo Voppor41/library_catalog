@@ -2,3 +2,4 @@
 .idea
 alembic
 alembic.ini
+docker-compose.yml
