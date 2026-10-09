@@ -2,6 +2,7 @@ import httpx
 
 from ..base.base_client import BaseApiClient
 from ...domain.exceptions import OpenLibraryException, OpenLibraryTimeoutException
+from ...core.cache import cache_service, make_cache_key
 
 
 class OpenLibraryClient(BaseApiClient):
@@ -17,6 +18,12 @@ class OpenLibraryClient(BaseApiClient):
         return "openlibrary"
 
     async def search_by_isbn(self, isbn: str) -> dict:
+        cache_key = make_cache_key("ol:isbn", isbn)
+        cached = await cache_service.get(cache_key)
+
+        if cached is not None:
+            return cached
+
         try:
             data = await self._get("/search.json", params={"isbn": isbn, "limit": 1})
 
@@ -36,6 +43,12 @@ class OpenLibraryClient(BaseApiClient):
             title: str,
             author: str,
     ) -> dict:
+
+        cache_key = make_cache_key("ol:title-author", title, author)
+        cached = await cache_service.get(cache_key)
+
+        if cached is not None:
+            return cached
 
         try:
             data = await self._get(
@@ -69,7 +82,7 @@ class OpenLibraryClient(BaseApiClient):
             if data:
                 return data
 
-        return self.search_by_title_author(title, author)
+        return await self.search_by_title_author(title, author)
 
     def _extract_book_data(self, doc: dict) -> dict:
 

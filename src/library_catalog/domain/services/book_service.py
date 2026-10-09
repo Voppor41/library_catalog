@@ -1,9 +1,10 @@
-from uuid import UUID
-from ...api.v1.schemas.book import BookCreate, BookUpdate, ShowBook
-from ...data.repositories.book_repository import BookRepository
-from ...external.openlibrary.client import OpenLibraryClient
 from ..exceptions import *
 from ..mappers.book_mapper import BookMapper
+from ...api.v1.schemas.book import BookCreate, BookUpdate, ShowBook
+from ...core.cache import cache_service, make_cache_key
+from ...core.config import settings
+from ...data.repositories.book_repository import BookRepository
+from ...external.openlibrary.client import OpenLibraryClient
 
 
 class BookService:
@@ -37,6 +38,7 @@ class BookService:
             description=book_data.description,
             extra=extra,
         )
+        await self._invalidate_search_cache()
 
         return BookMapper.to_show_book(book)
 
@@ -64,6 +66,7 @@ class BookService:
             self._validate_pages(book_data.pages)
 
         updated = await self.book_repo.update(book_id, **book_data.model_dump(exclude_unset=True))
+        await self._invalidate_search_cache()
 
         return BookMapper.to_show_book(updated)
 
@@ -72,6 +75,7 @@ class BookService:
         deleted = await self.book_repo.delete(book_id)
         if not deleted:
             raise BookNotFoundException(book_id)
+        await self._invalidate_search_cache()
 
     async def search_book(
             self,
@@ -83,6 +87,21 @@ class BookService:
             limit: int = 20,
             offset: int = 0,
     ) -> tuple[list[ShowBook], int]:
+
+        cache_key = make_cache_key(
+            "books:search",
+            title=title,
+            author=author,
+            genre=genre,
+            year=year,
+            available=available,
+            limit=limit,
+            offset=offset,
+        )
+        cached = await  cache_service.get(cache_key)
+        if cached is not None:
+            items = [ShowBook.model_validate(item) for item in cached["items"]]
+            return items, cached["total"]
 
         books = await self.book_repo.find_by_filters(
             title=title,
@@ -103,7 +122,19 @@ class BookService:
             available=available,
         )
 
-        return BookMapper.to_show_books(books), total
+        result_books = BookMapper.to_show_books(books)
+
+        await cache_service.set(
+            cache_key,
+            {
+                "items": [b.model_dump(mode="json") for b in result_books],
+                "total": total,
+            },
+            settings.CACHE_TTL_SEARCH,
+        )
+
+
+        return result_books, total
 
     # ========== ПРИВАТНЫЕ МЕТОДЫ ==========
 
@@ -142,3 +173,6 @@ class BookService:
                 extra={"title": book_data.title, "author": book_data.author}
             )
             return None
+
+    async def _invalidate_search_cache(self) -> None:
+        await cache_service.delete_pattern("books:search:*")

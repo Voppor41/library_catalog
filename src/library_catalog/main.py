@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from library_catalog.core.redis_config import init_redis_client, close_redis_client
 from .core.config import settings
 from .core.database import dispose_engine
 from .core.exceptions import register_exception_handlers
@@ -21,13 +22,14 @@ async def lifespan(app: FastAPI):
     - startup: настройка логирования
     - shutdown: закрытие подключений к БД
     """
-    # Startup
     setup_logging()
+    await init_redis_client()
     print("🚀 Application started")
 
     yield
 
     # Shutdown
+    await close_redis_client()
     await dispose_engine()
     print("👋 Application stopped")
 
@@ -63,10 +65,6 @@ register_exception_handlers(app)
 # Версия 1 API
 app.include_router(
     books.router,
-    prefix=settings.api_v1_prefix,
-)
-app.include_router(
-    health.router,
     prefix=settings.api_v1_prefix,
 )
 
