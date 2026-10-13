@@ -8,6 +8,8 @@ from ..core.database import get_db
 from ..data.repositories.book_repository import BookRepository
 from ..domain.services.book_service import BookService
 from ..external.openlibrary.client import OpenLibraryClient
+from ..data.repositories.user_repository import UserRepository
+from ..domain.services.user_service import UserService
 from ..core.config import settings
 
 
@@ -39,6 +41,16 @@ async def get_book_service(
         openlibrary_client=ol_client,
     )
 
+async def get_user_repository(
+        db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserRepository:
+    return UserRepository(db)
+
+async def get_user_service(
+        user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+) -> UserService:
+    return UserService(user_repo)
+
 
 # ========== TYPE ALIASES ДЛЯ УДОБСТВА ==========
 
@@ -47,3 +59,4 @@ async def get_book_service(
 BookServiceDep = Annotated[BookService, Depends(get_book_service)]
 BookRepoDep = Annotated[BookRepository, Depends(get_book_repository)]
 DbSessionDep = Annotated[AsyncSession, Depends(get_db)]
+AuthServiceDep = Annotated[UserService, Depends(get_user_service)]

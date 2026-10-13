@@ -47,3 +47,23 @@ class OpenLibraryTimeoutException(AppException):
             message=f"Open Library API timeout after {timeout}s",
             status_code=504,
         )
+
+
+class UserAlreadyExistsException(AppException):
+    """Такой username или email уже есть."""
+
+    def __init__(self, field: str, value: str):
+        super().__init__(
+            message=f"User with {field} '{value}' already exists",
+            status_code=409,
+        )
+
+
+class InvalidCredentialsException(AppException):
+    """Неверный логин или пароль."""
+
+    def __init__(self):
+        super().__init__(
+            message="Invalid username or password",
+            status_code=401,
+        )

@@ -3,12 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from library_catalog.core.redis_config import init_redis_client, close_redis_client
+from .core.redis_config import init_redis_client, close_redis_client
 from .core.config import settings
 from .core.database import dispose_engine
 from .core.exceptions import register_exception_handlers
 from .core.logging_config import setup_logging
-from .api.v1.routers import books, health
+from .api.v1.routers import books, health, users
 
 
 # ========== LIFECYCLE EVENTS ==========
@@ -68,6 +68,10 @@ app.include_router(
     prefix=settings.api_v1_prefix,
 )
 
+app.include_router(
+    users.router,
+    prefix=settings.api_v1_prefix,
+)
 
 # ========== ROOT ENDPOINT ==========
 

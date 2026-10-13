@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     CACHE_TTL_OPENLIBRARY: int = 3600
     CACHE_TTL_SEARCH: int = 300
     CACHE_ENABLED: bool = True
+    SECRET_KEY: str = "QzU_GtTnPQUgbRn9Py4lNqW29Ikk8WSkTBlKWtK2cbGYfb76RtDBL-9nr8OscW3j"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
 
     model_config = SettingsConfigDict(
