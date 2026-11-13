@@ -33,7 +33,6 @@ def create_access_token(user_id: UUID, role: str) -> str:
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
-    """Проверить JWT и вернуть его обязательные claims."""
     return jwt.decode(
         token,
         key=settings.jwt_secret_key,

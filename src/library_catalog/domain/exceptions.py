@@ -72,8 +72,6 @@ class InvalidCredentialsException(AppException):
 
 
 class InvalidTokenException(AppException):
-    """Токен отсутствует, повреждён, просрочен или относится к удалённому пользователю."""
-
     def __init__(self):
         super().__init__(
             message="Could not validate credentials",
