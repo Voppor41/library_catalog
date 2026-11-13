@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 import bcrypt
@@ -28,4 +29,14 @@ def create_access_token(user_id: UUID, role: str) -> str:
         payload,
         algorithm=settings.jwt_algorithm,
         key=settings.jwt_secret_key,
+    )
+
+
+def decode_access_token(token: str) -> dict[str, Any]:
+    """Проверить JWT и вернуть его обязательные claims."""
+    return jwt.decode(
+        token,
+        key=settings.jwt_secret_key,
+        algorithms=[settings.jwt_algorithm],
+        options={"require": ["exp", "sub", "role"]},
     )

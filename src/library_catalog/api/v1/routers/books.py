@@ -3,11 +3,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from ...dependencies import BookServiceDep
+from ...dependencies import BookServiceDep, get_current_user
 from ..schemas.book import BookCreate, BookUpdate, ShowBook
 from ..schemas.common import PaginationParams, PaginationResponse
 
-router = APIRouter(prefix="/books", tags=["Books"])
+router = APIRouter(
+    prefix="/books",
+    tags=["Books"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.post("/",

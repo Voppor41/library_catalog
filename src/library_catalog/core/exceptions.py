@@ -7,9 +7,15 @@ from fastapi.responses import JSONResponse
 class AppException(Exception):
     """Базовое исключение приложения."""
 
-    def __init__(self, message: str, status_code: int = 400):
+    def __init__(
+        self,
+        message: str,
+        status_code: int = 400,
+        headers: dict[str, str] | None = None,
+    ):
         self.message = message
         self.status_code = status_code
+        self.headers = headers
         super().__init__(self.message)
 
 
@@ -31,4 +37,5 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.message},
+            headers=exc.headers,
         )

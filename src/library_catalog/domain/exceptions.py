@@ -69,3 +69,14 @@ class InvalidCredentialsException(AppException):
             message="Invalid username or password",
             status_code=401,
         )
+
+
+class InvalidTokenException(AppException):
+    """Токен отсутствует, повреждён, просрочен или относится к удалённому пользователю."""
+
+    def __init__(self):
+        super().__init__(
+            message="Could not validate credentials",
+            status_code=401,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
