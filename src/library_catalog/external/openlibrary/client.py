@@ -1,8 +1,11 @@
 import httpx
+from pydantic import ValidationError
 
 from ...core.cache import cache_service, make_cache_key
+from ...core.config import settings
 from ...domain.exceptions import OpenLibraryException, OpenLibraryTimeoutException
 from ..base.base_client import BaseApiClient
+from .schemas import OpenLibrarySearchDoc, OpenLibrarySearchResponse
 
 
 class OpenLibraryClient(BaseApiClient):
@@ -19,24 +22,10 @@ class OpenLibraryClient(BaseApiClient):
 
     async def search_by_isbn(self, isbn: str) -> dict:
         cache_key = make_cache_key("ol:isbn", isbn)
-        cached = await cache_service.get(cache_key)
-
-        if cached is not None:
-            return cached
-
-        try:
-            data = await self._get("/search.json", params={"isbn": isbn, "limit": 1})
-
-            docs = data.get("docs", [])
-            if not docs:
-                return {}
-
-            return self._extract_book_data(docs[0])
-
-        except httpx.TimeoutException:
-            raise OpenLibraryTimeoutException(self.timeout)
-        except httpx.HTTPError as e:
-            raise OpenLibraryException(str(e))
+        return await self._search(
+            cache_key,
+            params={"isbn": isbn, "limit": 1},
+        )
 
     async def search_by_title_author(
             self,
@@ -45,36 +34,16 @@ class OpenLibraryClient(BaseApiClient):
     ) -> dict:
 
         cache_key = make_cache_key("ol:title-author", title, author)
-        cached = await cache_service.get(cache_key)
-
-        if cached is not None:
-            return cached
-
-        try:
-            data = await self._get(
-                "/search.json",
-                params={
-                    "title": title,
-                    "author": author,
-                    "limit": 1
-                }
-            )
-
-            docs = data.get("docs", [])
-            if not docs:
-                return {}
-            return self._extract_book_data(docs[0])
-
-        except httpx.TimeoutException:
-            raise OpenLibraryTimeoutException
-        except httpx.HTTPError as e:
-            raise OpenLibraryException(str(e))
+        return await self._search(
+            cache_key,
+            params={"title": title, "author": author, "limit": 1},
+        )
 
     async def enrich(
             self,
             title: str,
             author: str,
-            isbn: str
+            isbn: str | None,
     ) -> dict:
 
         if isbn:
@@ -84,39 +53,52 @@ class OpenLibraryClient(BaseApiClient):
 
         return await self.search_by_title_author(title, author)
 
-    def _extract_book_data(self, doc: dict) -> dict:
+    async def _search(self, cache_key: str, params: dict) -> dict:
+        cached = await cache_service.get(cache_key)
+        if cached is not None:
+            return cached
+
+        try:
+            data = await self._get("/search.json", params=params)
+            response = OpenLibrarySearchResponse.model_validate(data)
+            result = (
+                self._extract_book_data(response.docs[0])
+                if response.docs
+                else {}
+            )
+            await cache_service.set(
+                cache_key,
+                result,
+                settings.cache_ttl_openlibrary,
+            )
+            return result
+        except httpx.TimeoutException as exc:
+            raise OpenLibraryTimeoutException(self.timeout) from exc
+        except httpx.HTTPError as exc:
+            raise OpenLibraryException(str(exc)) from exc
+        except (ValidationError, ValueError) as exc:
+            raise OpenLibraryException("Invalid response") from exc
+
+    def _extract_book_data(self, doc: OpenLibrarySearchDoc) -> dict:
 
         result = {}
 
-        # Cover URL
-        if cover_id := doc.get("cover_i"):
+        if doc.cover_i:
             result["cover_url"] = (
-                f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+                f"https://covers.openlibrary.org/b/id/{doc.cover_i}-L.jpg"
             )
 
-        # Subjects (темы)
-        if subjects := doc.get("subject"):
-            result["subjects"] = subjects[:10]  # Первые 10
+        if doc.subject:
+            result["subjects"] = doc.subject[:10]
 
-        # Publisher
-        if publisher := doc.get("publisher"):
-            result["publisher"] = publisher[0] if publisher else None
+        if doc.publisher:
+            result["publisher"] = doc.publisher[0]
 
-        # Language
-        if language := doc.get("language"):
-            result["language"] = language[0] if language else None
+        if doc.language:
+            result["language"] = doc.language[0]
 
-        # Ratings
-        if ratings := doc.get("ratings_average"):
-            result["rating"] = ratings
+        if doc.ratings_average is not None:
+            result["rating"] = doc.ratings_average
 
         return result
-
-    def _get_cover_url(self, cover_id: int | None) -> str | None:
-        """Получить URL обложки."""
-        if not cover_id:
-            return None
-        return f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
-
-
 

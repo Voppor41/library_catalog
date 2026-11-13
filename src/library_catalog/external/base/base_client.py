@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 import httpx
 
@@ -13,12 +14,20 @@ class BaseApiClient(ABC):
         timeout: float = 10.0,
         retries: int = 3,
         backoff: float = 0.5,
+        max_connections: int = 100,
+        max_keepalive_connections: int = 20,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.retries = retries
         self.backoff = backoff
-        self._client = httpx.AsyncClient(timeout=self.timeout)
+        self._client = httpx.AsyncClient(
+            timeout=httpx.Timeout(self.timeout),
+            limits=httpx.Limits(
+                max_connections=max_connections,
+                max_keepalive_connections=max_keepalive_connections,
+            ),
+        )
         self.logger = logging.getLogger(self.client_name())
 
     @abstractmethod
@@ -28,7 +37,7 @@ class BaseApiClient(ABC):
     def _build_url(self, path: str) -> str:
 
         if not path.startswith("/"):
-            path += "/" + path
+            path = "/" + path
         return self.base_url + path
 
     async def _request(
@@ -38,7 +47,7 @@ class BaseApiClient(ABC):
             params: dict | None = None,
             json: dict | None = None,
             headers: dict | None = None
-    ) -> dict:
+    ) -> dict[str, Any]:
 
         url = self._build_url(path)
 
@@ -66,6 +75,13 @@ class BaseApiClient(ABC):
                 self.logger.warning(f"Timeout, retrying in {wait_time}s...")
                 await asyncio.sleep(wait_time)
 
+            except httpx.TransportError:
+                if attempt == self.retries - 1:
+                    raise
+
+                wait_time = self.backoff * (2 ** attempt)
+                await asyncio.sleep(wait_time)
+
             except httpx.HTTPStatusError as e:
 
                 if e.response.status_code >= 500 and attempt < self.retries - 1:
@@ -76,7 +92,7 @@ class BaseApiClient(ABC):
                     self.logger.error(f"HTTP error: {e}")
                     raise
 
-    async def _get(self, path: str, **kwargs):
+    async def _get(self, path: str, **kwargs) -> dict[str, Any]:
         return await self._request("GET", path, **kwargs)
 
     async def close(self) -> None:

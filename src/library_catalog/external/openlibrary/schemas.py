@@ -14,7 +14,7 @@ class OpenLibrarySearchDoc(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 class OpenLibrarySearchResponse(BaseModel):
-    """Ответ от /search.json"""
-
-    numFound: int
+    num_found: int = Field(alias="numFound")
     docs: list[OpenLibrarySearchDoc]
+
+    model_config = ConfigDict(populate_by_name=True)
