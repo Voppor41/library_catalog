@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+
 from ...api.v1.schemas.book import BookCreate, BookUpdate, ShowBook
 from ...core.cache import cache_service, make_cache_key
 from ...core.config import settings
@@ -37,16 +39,24 @@ class BookService:
 
         extra = await self._enrich_book_data(book_data)
 
-        book = await self.book_repo.create(
-            title=book_data.title,
-            author=book_data.author,
-            year=book_data.year,
-            genre=book_data.genre,
-            pages=book_data.pages,
-            isbn=book_data.isbn,
-            description=book_data.description,
-            extra=extra,
-        )
+        try:
+            book = await self.book_repo.create(
+                title=book_data.title,
+                author=book_data.author,
+                year=book_data.year,
+                genre=book_data.genre,
+                pages=book_data.pages,
+                isbn=book_data.isbn,
+                description=book_data.description,
+                extra=extra,
+            )
+            await self.book_repo.commit()
+        except IntegrityError as exc:
+            await self.book_repo.rollback()
+            if book_data.isbn is not None:
+                raise BookAlreadyExistsException(book_data.isbn) from exc
+            raise
+
         await self._invalidate_search_cache()
 
         return BookMapper.to_show_book(book)
@@ -74,7 +84,18 @@ class BookService:
         if book_data.pages is not None:
             self._validate_pages(book_data.pages)
 
-        updated = await self.book_repo.update(book_id, **book_data.model_dump(exclude_unset=True))
+        try:
+            updated = await self.book_repo.update(
+                book_id,
+                **book_data.model_dump(exclude_unset=True),
+            )
+            await self.book_repo.commit()
+        except IntegrityError as exc:
+            await self.book_repo.rollback()
+            if book_data.isbn is not None:
+                raise BookAlreadyExistsException(book_data.isbn) from exc
+            raise
+
         await self._invalidate_search_cache()
 
         return BookMapper.to_show_book(updated)
@@ -84,6 +105,7 @@ class BookService:
         deleted = await self.book_repo.delete(book_id)
         if not deleted:
             raise BookNotFoundException(book_id)
+        await self.book_repo.commit()
         await self._invalidate_search_cache()
 
     async def search_book(

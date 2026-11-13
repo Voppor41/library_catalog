@@ -1,4 +1,5 @@
 import anyio
+from sqlalchemy.exc import IntegrityError
 
 from ...api.v1.schemas.user import TokenResponse, UserCreate, UserLogin, UserPublic
 from ...core.security import create_access_token, hash_password, verify_password
@@ -20,12 +21,21 @@ class UserService:
 
         password_hash = await anyio.to_thread.run_sync(hash_password, data.password)
 
-        user_data = await self.user_repository.create(
-            username=data.username,
-            email=data.email,
-            password_hash=password_hash,
-            role="user",
-        )
+        try:
+            user_data = await self.user_repository.create(
+                username=data.username,
+                email=data.email,
+                password_hash=password_hash,
+                role="user",
+            )
+            await self.user_repository.commit()
+        except IntegrityError:
+            await self.user_repository.rollback()
+            if await self.user_repository.get_by_username(data.username):
+                raise UserAlreadyExistsException("username", data.username)
+            if await self.user_repository.get_by_email(data.email):
+                raise UserAlreadyExistsException("email", str(data.email))
+            raise
 
         return UserPublic.model_validate(user_data)
 

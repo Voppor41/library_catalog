@@ -12,7 +12,7 @@ class BaseRepository[T]:
     async def create(self, **kwargs) -> T:
         instance = self.model(**kwargs)
         self.session.add(instance)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(instance)
         return instance
 
@@ -29,7 +29,7 @@ class BaseRepository[T]:
             if hasattr(new_instance, field):
                 setattr(new_instance, field, value)
 
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(new_instance)
         return new_instance
 
@@ -39,8 +39,14 @@ class BaseRepository[T]:
             return False
 
         await self.session.delete(instance)
-        await self.session.commit()
+        await self.session.flush()
         return True
+
+    async def commit(self) -> None:
+        await self.session.commit()
+
+    async def rollback(self) -> None:
+        await self.session.rollback()
 
     async def get_all(self, limit: int = 100, offset: int = 0,) -> list[T]:
         stmt = select(self.model).limit(limit).offset(offset)
