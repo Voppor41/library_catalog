@@ -1,8 +1,10 @@
-import redis.asyncio as redis
-from .config import settings
 import logging
+from typing import Literal
 
+import redis.asyncio as redis
+from redis.exceptions import RedisError
 
+from .config import settings
 
 _redis_client: redis.Redis | None = None
 logger = logging.getLogger(__name__)
@@ -25,7 +27,7 @@ async def init_redis_client() -> redis.Redis | None:
         await client.ping()
         logger.info("Redis connected %s", client)
         _redis_client = client
-    except Exception as e:
+    except RedisError as e:
         logger.warning(f"Failed to connect to Redis server: {e}")
         await client.aclose()
         _redis_client = None
@@ -47,12 +49,12 @@ async def close_redis_client() -> None:
     await _redis_client.aclose()
     _redis_client = None
 
-async def redis_health() -> None:
+async def redis_health() -> Literal["connected", "disconnected"]:
     client = await get_redis_client()
     if client is None:
         return "disconnected"
     try:
         await client.ping()
         return "connected"
-    except Exception:
+    except RedisError:
         return "disconnected"

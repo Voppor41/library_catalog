@@ -1,7 +1,7 @@
-from typing import Generic, TypeVar, Literal
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
-T = TypeVar('T')
 
 class PaginationParams(BaseModel):
 
@@ -17,7 +17,7 @@ class PaginationParams(BaseModel):
         return self.page_size
 
 
-class PaginationResponse(BaseModel, Generic[T]):
+class PaginationResponse[T](BaseModel):
     items: list[T]
     total: int = Field(..., description="Всего элементов")
     page: int = Field(..., description="Текущая страница")

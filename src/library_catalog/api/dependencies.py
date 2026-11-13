@@ -4,13 +4,13 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..core.config import settings
 from ..core.database import get_db
 from ..data.repositories.book_repository import BookRepository
-from ..domain.services.book_service import BookService
-from ..external.openlibrary.client import OpenLibraryClient
 from ..data.repositories.user_repository import UserRepository
+from ..domain.services.book_service import BookService
 from ..domain.services.user_service import UserService
-from ..core.config import settings
+from ..external.openlibrary.client import OpenLibraryClient
 
 
 @lru_cache

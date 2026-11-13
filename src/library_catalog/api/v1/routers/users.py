@@ -1,8 +1,7 @@
 from fastapi import APIRouter, status
 
-from ..schemas.user import TokenResponse, UserCreate, UserLogin, UserPublic
 from ...dependencies import AuthServiceDep
-
+from ..schemas.user import TokenResponse, UserCreate, UserLogin, UserPublic
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

@@ -1,5 +1,8 @@
+from datetime import UTC, datetime
 from uuid import UUID
+
 from ..core.exceptions import AppException, NotFoundException
+
 
 class BookNotFoundException(NotFoundException):
     """Книга не найдена."""
@@ -17,8 +20,7 @@ class BookAlreadyExistsException(AppException):
 class InvalidYearException(AppException):
     """Невалидный год издания."""
     def __init__(self, year: int):
-        from datetime import datetime
-        current_year = datetime.now().year
+        current_year = datetime.now(UTC).year
         super().__init__(
             message=f"Year {year} is invalid (must be 1000-{current_year})",
             status_code=400,

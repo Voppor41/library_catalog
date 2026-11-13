@@ -4,13 +4,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from library_catalog.api.dependencies import get_openlibrary_client
-from .core.redis_config import init_redis_client, close_redis_client
+
+from .api.v1.routers import books, health, users
 from .core.config import settings
 from .core.database import dispose_engine
 from .core.exceptions import register_exception_handlers
 from .core.logging_config import setup_logging
-from .api.v1.routers import books, health, users
-
+from .core.redis_config import close_redis_client, init_redis_client
 
 # ========== LIFECYCLE EVENTS ==========
 

@@ -3,9 +3,10 @@ import json
 import logging
 from typing import Any
 
+from redis.exceptions import RedisError
+
 from .config import settings
 from .redis_config import get_redis_client
-
 
 logger = logging.getLogger(__name__)
 
@@ -40,34 +41,34 @@ class CacheService:
             if raw is None:
                 return None
             return json.loads(raw)
-        except Exception as e:
+        except (json.JSONDecodeError, RedisError, TypeError) as e:
             logger.warning("Cache GET failed for %s: %s", key, e)
             return None
 
     async def set(self, key: str, value: Any, ttl: int) -> None:
         if not self.enabled:
-            return None
+            return
 
         client = await get_redis_client()
         if client is None:
-            return None
+            return
 
         try:
             await client.set(key, json.dumps(value, default=str), ex=ttl)
-        except Exception as e:
+        except (RedisError, TypeError) as e:
             logger.warning("Cache SET failed for %s: %s", key, e)
-            return None
+            return
 
     async def delete_pattern(self, pattern: str) -> None:
         if not self.enabled:
-            return None
+            return
         client = await get_redis_client()
         if client is None:
-            return None
+            return
         try:
             async for key in client.scan_iter(match=pattern, count=100):
                 await client.delete(key)
-        except Exception as e:
+        except RedisError as e:
             logger.warning("Cache DELETE failed for %s: %s", pattern, e)
 
 

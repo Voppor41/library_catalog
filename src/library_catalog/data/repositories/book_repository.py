@@ -1,9 +1,8 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .base_repository import BaseRepository
 from ..models.book import Book
-
+from .base_repository import BaseRepository
 
 
 class BookRepository(BaseRepository[Book]):

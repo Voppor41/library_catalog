@@ -1,11 +1,19 @@
+from datetime import UTC, datetime
 from uuid import UUID
-from ..exceptions import *
-from ..mappers.book_mapper import BookMapper
+
 from ...api.v1.schemas.book import BookCreate, BookUpdate, ShowBook
 from ...core.cache import cache_service, make_cache_key
 from ...core.config import settings
 from ...data.repositories.book_repository import BookRepository
 from ...external.openlibrary.client import OpenLibraryClient
+from ..exceptions import (
+    BookAlreadyExistsException,
+    BookNotFoundException,
+    InvalidPagesException,
+    InvalidYearException,
+    OpenLibraryException,
+)
+from ..mappers.book_mapper import BookMapper
 
 
 class BookService:
@@ -145,9 +153,7 @@ class BookService:
 
     def _validate_year(self, year: int):
 
-        from datetime import datetime
-
-        current_year = datetime.now().year
+        current_year = datetime.now(UTC).year
         if year < 1000 or year > current_year:
             raise InvalidYearException(year)
 

@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
-import httpx
-import logging
-import time
 import asyncio
+import logging
+from abc import ABC, abstractmethod
+
+import httpx
 
 
 class BaseApiClient(ABC):
@@ -24,7 +24,6 @@ class BaseApiClient(ABC):
     @abstractmethod
     def client_name(self) -> str:
         """Имя клиента для логирования."""
-        pass
 
     def _build_url(self, path: str) -> str:
 

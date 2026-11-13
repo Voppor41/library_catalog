@@ -1,8 +1,9 @@
-from typing import Literal, Any
-
-from pydantic import PostgresDsn, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from typing import Literal
+
+from pydantic import Field, PostgresDsn
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
 

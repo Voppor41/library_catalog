@@ -1,8 +1,8 @@
-import jwt
-import bcrypt
-
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
+
+import bcrypt
+import jwt
 
 from .config import settings
 
@@ -16,7 +16,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(user_id: UUID, role: str) -> str:
 
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
 
     payload = {
         "sub": str(user_id),

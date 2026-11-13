@@ -1,16 +1,11 @@
-from uuid import UUID
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
-from ..schemas.book import (
-    BookCreate,
-    BookUpdate,
-    ShowBook,
-    BookFilters
-)
-from ..schemas.common import PaginationResponse, PaginationParams
 from ...dependencies import BookServiceDep
+from ..schemas.book import BookCreate, BookUpdate, ShowBook
+from ..schemas.common import PaginationParams, PaginationResponse
 
 router = APIRouter(prefix="/books", tags=["Books"])
 
