@@ -1,7 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from time import perf_counter
+from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from library_catalog.api.dependencies import get_openlibrary_client
@@ -51,6 +53,25 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def request_context(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    request.state.request_id = request_id
+    started_at = perf_counter()
+    response = await call_next(request)
+    elapsed = perf_counter() - started_at
+    response.headers["X-Request-ID"] = request_id
+    logger.info(
+        "%s %s %s %.3f request_id=%s",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed,
+        request_id,
+    )
+    return response
 
 # ========== MIDDLEWARE ==========
 
