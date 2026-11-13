@@ -16,6 +16,11 @@ class Settings(BaseSettings):
 
     database_url: PostgresDsn
     database_pool_size: int = 20
+    database_max_overflow: int = 10
+    database_pool_timeout: float = 30.0
+    database_pool_recycle: int = 1800
+    database_pool_pre_ping: bool = True
+    database_ssl: bool = False
 
     jwt_secret_key: str = Field(..., min_length=32)
     jwt_algorithm: str = "HS256"

@@ -12,8 +12,12 @@ class Base(DeclarativeBase):
 engine = create_async_engine(
     str(settings.database_url),
     pool_size=settings.database_pool_size,
+    max_overflow=settings.database_max_overflow,
+    pool_timeout=settings.database_pool_timeout,
+    pool_recycle=settings.database_pool_recycle,
+    pool_pre_ping=settings.database_pool_pre_ping,
     echo=settings.debug,
-    connect_args={"ssl": False}
+    connect_args={"ssl": settings.database_ssl},
 )
 
 async_session_maker = async_sessionmaker(
