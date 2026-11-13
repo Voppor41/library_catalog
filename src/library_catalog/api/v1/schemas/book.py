@@ -158,8 +158,13 @@ class ShowBook(BookBase):
     }
 
 class BookFilters(BaseModel):
-    title: str | None = Field(None, description="Поиск по названию (частичное совпадение)")
-    author: str | None = Field(None, description="Поиск по автору (частичное совпадение)")
-    genre: str | None = Field(None, description="Точное совпадение жанра")
-    year: int | None = Field(None, description="Точное совпадение года")
+    title: str | None = Field(None, min_length=1, max_length=500)
+    author: str | None = Field(None, min_length=1, max_length=300)
+    genre: str | None = Field(None, min_length=1, max_length=100)
+    year: int | None = Field(None, ge=1000, le=2100)
     available: bool | None = Field(None, description="Фильтр по доступности")
+
+    @field_validator("title", "author", "genre", mode="before")
+    @classmethod
+    def strip_filter_text(cls, value: str | None) -> str | None:
+        return _strip_text(value)

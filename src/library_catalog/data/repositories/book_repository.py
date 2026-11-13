@@ -1,5 +1,8 @@
+from typing import Any
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Select
 
 from ..models.book import Book
 from .base_repository import BaseRepository
@@ -19,19 +22,15 @@ class BookRepository(BaseRepository[Book]):
             limit: int = 20,
             offset: int = 0,
     ) -> list[Book]:
-        stmt = select(Book)
-
-        if title is not None:
-            stmt = stmt.where(Book.title.ilike(f"%{title}%"))
-        if author is not None:
-            stmt = stmt.where(Book.author.ilike(f"%{author}%"))
-        if genre is not None:
-            stmt = stmt.where(Book.genre == genre)
-        if year is not None:
-            stmt = stmt.where(Book.year == year)
-        if available is not None:
-            stmt = stmt.where(Book.available == available)
-
+        stmt = self._apply_filters(
+            select(Book),
+            title=title,
+            author=author,
+            genre=genre,
+            year=year,
+            available=available,
+        )
+        stmt = stmt.order_by(Book.created_at.desc(), Book.book_id.asc())
         stmt = stmt.limit(limit).offset(offset)
         result = await self.session.scalars(stmt)
         return list(result.all())
@@ -48,11 +47,28 @@ class BookRepository(BaseRepository[Book]):
             genre: str | None = None,
             year: int | None = None,
             available: bool | None = None,
-            limit: int = 20,
-            offset: int = 0,
     ) -> int:
-        stmt = select(func.count()).select_from(Book)
+        stmt = self._apply_filters(
+            select(func.count()).select_from(Book),
+            title=title,
+            author=author,
+            genre=genre,
+            year=year,
+            available=available,
+        )
 
+        total = await self.session.scalar(stmt)
+        return int(total or 0)
+
+    def _apply_filters(
+            self,
+            stmt: Select[Any],
+            title: str | None = None,
+            author: str | None = None,
+            genre: str | None = None,
+            year: int | None = None,
+            available: bool | None = None,
+    ) -> Select[Any]:
         if title is not None:
             stmt = stmt.where(Book.title.ilike(f"%{title}%"))
         if author is not None:
@@ -64,5 +80,4 @@ class BookRepository(BaseRepository[Book]):
         if available is not None:
             stmt = stmt.where(Book.available == available)
 
-        total = await self.session.scalar(stmt)
-        return int(total or 0)
+        return stmt
