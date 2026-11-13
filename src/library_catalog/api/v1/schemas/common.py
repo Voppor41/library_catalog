@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Literal
 from pydantic import BaseModel, Field
 
 T = TypeVar('T')
@@ -44,5 +44,6 @@ class PaginationResponse(BaseModel, Generic[T]):
 
 
 class HealthCheckResponse(BaseModel):
-    status: str = "healthy"
-    database: str = "connected"
+    status: Literal["healthy", "degraded", "unhealthy"]
+    database: Literal["connected", "disconnected"]
+    redis: Literal["connected", "disconnected"] | None = None

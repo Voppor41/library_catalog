@@ -25,7 +25,7 @@ def make_cache_key(prefix: str, *parts: Any, **kwargs: Any) -> str:
 class CacheService:
 
     def __init__(self) -> None:
-        self.enabled = settings.CACHE_ENABLED
+        self.enabled = settings.cache_enabled
 
     async def get(self, key: str) -> Any | None:
         if not self.enabled:

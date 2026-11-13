@@ -1,3 +1,4 @@
+from uuid import UUID
 from ..exceptions import *
 from ..mappers.book_mapper import BookMapper
 from ...api.v1.schemas.book import BookCreate, BookUpdate, ShowBook
@@ -130,7 +131,7 @@ class BookService:
                 "items": [b.model_dump(mode="json") for b in result_books],
                 "total": total,
             },
-            settings.CACHE_TTL_SEARCH,
+            settings.cache_ttl_search,
         )
 
 

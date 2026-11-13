@@ -23,6 +23,6 @@ async def health_check(db: DbSessionDep):
         db_status = "disconnected"
 
     return HealthCheckResponse(
-        status="healthy",
-        data=db_status,
+        status="healthy" if db_status == "connected" else "unhealthy",
+        database=db_status,
     )

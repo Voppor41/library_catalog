@@ -1,40 +1,46 @@
 from typing import Literal, Any
 
-from pydantic import PostgresDsn
+from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 class Settings(BaseSettings):
 
     app_name: str = "Library Catalog API"
-    environment: Literal["development", "staging", "production"]
+    environment: Literal["development", "staging", "production"] = "development"
     debug: bool
-    database_url: str = PostgresDsn
-    database_pool_size: int = 20
     api_v1_prefix: str = "/api/v1"
-    log_level: str = "INFO"
     docs_url: str = "/docs"
     redoc_url: str = "/redoc"
-    cors_origins: list[str] = ["*"]
+
+    database_url: PostgresDsn
+    database_pool_size: int = 20
+
+    jwt_secret_key: str = Field(..., min_length=32)
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+
+    redis_url: str = "redis://localhost:6379"
+    cache_enabled: bool = True
+    cache_ttl_openlibrary: int = 3600
+    cache_ttl_search: int = 300
+
     openlibrary_base_url: str = "https://openlibrary.org"
     openlibrary_timeout: float = 10.0
-    REDIS_URL: str = "redis://localhost:6379"
-    CACHE_TTL_OPENLIBRARY: int = 3600
-    CACHE_TTL_SEARCH: int = 300
-    CACHE_ENABLED: bool = True
-    SECRET_KEY: str = "QzU_GtTnPQUgbRn9Py4lNqW29Ikk8WSkTBlKWtK2cbGYfb76RtDBL-9nr8OscW3j"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    cors_origins: list[str] = ["http://localhost:3000"]
 
 
     model_config = SettingsConfigDict(
         env_file=".env",
+        env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     @property
     def is_production(self) -> bool:
-        return self.enviroment == "production"
+        return self.environment == "production"
 
 
 @lru_cache

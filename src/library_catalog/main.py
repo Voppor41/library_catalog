@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from library_catalog.api.dependencies import get_openlibrary_client
 from .core.redis_config import init_redis_client, close_redis_client
 from .core.config import settings
 from .core.database import dispose_engine
@@ -22,16 +23,21 @@ async def lifespan(app: FastAPI):
     - startup: настройка логирования
     - shutdown: закрытие подключений к БД
     """
+
     setup_logging()
     await init_redis_client()
+    ol_client = get_openlibrary_client()
+    app.state.openlibrary_client = ol_client
     print("🚀 Application started")
 
-    yield
-
-    # Shutdown
-    await close_redis_client()
-    await dispose_engine()
-    print("👋 Application stopped")
+    try:
+        yield
+    finally:
+        # Shutdown
+        await ol_client.close()
+        await close_redis_client()
+        await dispose_engine()
+        print("👋 Application stopped")
 
 
 # ========== CREATE APP ==========
@@ -40,8 +46,6 @@ app = FastAPI(
     title=settings.app_name,
     description="REST API для управления библиотечным каталогом",
     version="1.0.0",
-    docs_url=settings.docs_url,
-    redoc_url=settings.redoc_url,
     lifespan=lifespan,
 )
 
@@ -70,6 +74,11 @@ app.include_router(
 
 app.include_router(
     users.router,
+    prefix=settings.api_v1_prefix,
+)
+
+app.include_router(
+    health.router,
     prefix=settings.api_v1_prefix,
 )
 

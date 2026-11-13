@@ -12,9 +12,9 @@ class UserService:
     async def create_user(self, data: UserCreate) -> UserPublic:
 
         if await self.user_repository.get_by_username(data.username):
-            raise UserAlreadyExistsException(data.username)
+            raise UserAlreadyExistsException("username", data.username)
         if await self.user_repository.get_by_email(data.email):
-            raise UserAlreadyExistsException(data.email)
+            raise UserAlreadyExistsException("email", str(data.email))
 
         user_data = await self.user_repository.create(
             username=data.username,
@@ -25,7 +25,7 @@ class UserService:
 
         return UserPublic.model_validate(user_data)
 
-    async def login_user(self, data: UserLogin) -> UserPublic:
+    async def login_user(self, data: UserLogin) -> TokenResponse:
 
         user = await self.user_repository.get_by_username(data.username)
         if user is None or not verify_password(data.password, user.password_hash):
