@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +12,8 @@ from .core.database import dispose_engine
 from .core.exceptions import register_exception_handlers
 from .core.logging_config import setup_logging
 from .core.redis_config import close_redis_client, init_redis_client
+
+logger = logging.getLogger(__name__)
 
 # ========== LIFECYCLE EVENTS ==========
 
@@ -28,7 +31,7 @@ async def lifespan(app: FastAPI):
     await init_redis_client()
     ol_client = get_openlibrary_client()
     app.state.openlibrary_client = ol_client
-    print("🚀 Application started")
+    logger.info("Application started")
 
     try:
         yield
@@ -37,7 +40,7 @@ async def lifespan(app: FastAPI):
         await ol_client.close()
         await close_redis_client()
         await dispose_engine()
-        print("👋 Application stopped")
+        logger.info("Application stopped")
 
 
 # ========== CREATE APP ==========

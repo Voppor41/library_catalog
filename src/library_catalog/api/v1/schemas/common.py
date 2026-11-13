@@ -46,4 +46,8 @@ class PaginationResponse[T](BaseModel):
 class HealthCheckResponse(BaseModel):
     status: Literal["healthy", "degraded", "unhealthy"]
     database: Literal["connected", "disconnected"]
-    redis: Literal["connected", "disconnected"] | None = None
+    redis: Literal["connected", "disconnected"]
+
+
+class LivenessResponse(BaseModel):
+    status: Literal["healthy"]

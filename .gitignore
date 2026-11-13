@@ -1,8 +1,5 @@
 .env
 .idea
-alembic
-alembic.ini
-docker-compose.yml
 __pycache__/
 *.py[cod]
 .venv/

@@ -29,10 +29,15 @@ def test_pagination_response_calculates_page_count() -> None:
     assert response.pages == 3
 
 
-def test_health_response_uses_database_field() -> None:
-    response = HealthCheckResponse(status="healthy", database="connected")
+def test_health_response_uses_dependency_fields() -> None:
+    response = HealthCheckResponse(
+        status="healthy",
+        database="connected",
+        redis="connected",
+    )
 
     assert response.database == "connected"
+    assert response.redis == "connected"
 
     with pytest.raises(ValidationError):
         HealthCheckResponse(status="healthy", data="connected")
