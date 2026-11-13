@@ -92,6 +92,8 @@ class BaseApiClient(ABC):
                     self.logger.error(f"HTTP error: {e}")
                     raise
 
+        raise RuntimeError("Request attempts exhausted")
+
     async def _get(self, path: str, **kwargs) -> dict[str, Any]:
         return await self._request("GET", path, **kwargs)
 

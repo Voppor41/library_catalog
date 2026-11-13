@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import overload
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -35,6 +36,14 @@ def _normalize_isbn(value: str | None) -> str | None:
         raise ValueError("ISBN must contain 10 or 13 characters")
 
     return isbn
+
+
+@overload
+def _strip_text(value: str) -> str: ...
+
+
+@overload
+def _strip_text(value: None) -> None: ...
 
 
 def _strip_text(value: str | None) -> str | None:

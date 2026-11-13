@@ -96,6 +96,9 @@ class BookService:
                 raise BookAlreadyExistsException(book_data.isbn) from exc
             raise
 
+        if updated is None:
+            raise BookNotFoundException(book_id)
+
         await self._invalidate_search_cache()
 
         return BookMapper.to_show_book(updated)

@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 from pydantic import ValidationError
 
@@ -81,7 +83,7 @@ class OpenLibraryClient(BaseApiClient):
 
     def _extract_book_data(self, doc: OpenLibrarySearchDoc) -> dict:
 
-        result = {}
+        result: dict[str, Any] = {}
 
         if doc.cover_i:
             result["cover_url"] = (

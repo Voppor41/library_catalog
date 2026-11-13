@@ -31,8 +31,9 @@ class Book(Base):
         index=True
     )
 
-    year: Mapped[int | None] = mapped_column(
+    year: Mapped[int] = mapped_column(
         Integer,
+        nullable=False,
         index=True
     )
 
@@ -41,8 +42,9 @@ class Book(Base):
         index=True
     )
 
-    pages: Mapped[int | None] = mapped_column(
-        Integer
+    pages: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
     )
 
     available: Mapped[bool] = mapped_column(

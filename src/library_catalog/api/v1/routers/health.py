@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, Response, status
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -24,14 +26,14 @@ async def readiness(db: DbSessionDep, response: Response):
 
     try:
         await db.execute(text("SELECT 1"))
-        db_status = "connected"
+        db_status: Literal["connected", "disconnected"] = "connected"
     except SQLAlchemyError:
         db_status = "disconnected"
 
     redis_status = await redis_health()
 
     if db_status == "disconnected":
-        service_status = "unhealthy"
+        service_status: Literal["healthy", "degraded", "unhealthy"] = "unhealthy"
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     elif redis_status == "disconnected":
         service_status = "degraded"

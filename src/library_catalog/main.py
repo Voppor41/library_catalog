@@ -6,8 +6,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from library_catalog.api.dependencies import get_openlibrary_client
-
+from .api.dependencies import get_openlibrary_client
 from .api.v1.routers import books, health, users
 from .core.config import settings
 from .core.database import dispose_engine
